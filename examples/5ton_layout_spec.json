@@ -1,0 +1,20 @@
+{
+ "title": {"PROJECT":"5 Ton Central Laundry","CLIENT":"Test Client LLC","DRAWING_TITLE":"Equipment Layout – Ground Floor","DRAWING_NO":"Layout 2058","DATE":"06 Nov 2026","STATUS":"Concept"},
+ "walls":[{"points":[[0,0],[24000,0],[24000,14000],[0,14000]],"thickness":200}],
+ "zones":[
+  {"name":"Soiled receiving & sorting","points":[[200,200],[6000,200],[6000,13800],[200,13800]]},
+  {"name":"Wash area","points":[[6000,200],[14000,200],[14000,13800],[6000,13800]]},
+  {"name":"Finishing","points":[[14000,200],[23800,200],[23800,13800],[14000,13800]]}],
+ "doors":[{"at":[1500,0],"width":2000,"angle":0,"swing":1,"label":"D1"}],
+ "equipment":[
+  {"tag":"W1","name":"Washer extractor","model":"TOLON TWE 100","w":1500,"d":1700,"x":8000,"y":11500,"kg":100,"kw":18,"clear_front":1000},
+  {"tag":"W2","name":"Washer extractor","model":"TOLON TWE 100","w":1500,"d":1700,"x":10200,"y":11500,"kg":100,"kw":18,"clear_front":1000},
+  {"tag":"W3","name":"Washer extractor","model":"TOLON TWE 60","w":1200,"d":1400,"x":12300,"y":11650,"kg":60,"kw":11,"clear_front":1000},
+  {"tag":"D1","name":"Tumble dryer","model":"TOLON TTD 75","w":1300,"d":1500,"x":8000,"y":3000,"kg":75,"kw":2.2,"clear_front":1000},
+  {"tag":"D2","name":"Tumble dryer","model":"TOLON TTD 75","w":1300,"d":1500,"x":10000,"y":3000,"kg":75,"kw":2.2,"clear_front":1000},
+  {"tag":"F1","name":"Flatwork ironer","model":"TOLON TFI 3320","w":4600,"d":1700,"x":18500,"y":11000,"kw":4,"clear_front":1500},
+  {"tag":"P1","name":"Utility press","w":1400,"d":900,"x":16000,"y":3000,"kw":3,"qty":2},
+  {"tag":"T1","name":"Sorting table","w":2400,"d":1000,"x":3100,"y":7000}],
+ "dims":[{"p1":[0,0],"p2":[24000,0],"offset":-1500},{"p1":[0,0],"p2":[0,14000],"offset":-1500}],
+ "notes":["All dimensions in mm. Verify on site before installation.","Clearances shown dashed are minimum service access.","Utility connection points to be confirmed by MEP."]
+}
