@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """MAGNARAB A1 CAD sheet tool.
 
-Three jobs, all on the official MAGNARAB A1 template (title block is never redrawn,
+Three jobs, all on the official MAGNARAB A1 or A3 template (title block is never redrawn,
 only its 12 attributes are filled):
 
   new    Draw a laundry layout from a JSON spec onto the A1 sheet.
@@ -11,7 +11,7 @@ only its 12 attributes are filled):
 `new` and `frame` also render the PDF and PNG automatically.
 
 Usage:
-  python magnarab_cad.py new   --spec spec.json --out OUTDIR/Layout_2058_Rev00
+  python magnarab_cad.py new   --spec spec.json --out OUTDIR/Layout_2058_Rev00 [--sheet A3]
   python magnarab_cad.py frame --input client.dxf --spec spec.json --out OUTDIR/Layout_2058_Rev00
   python magnarab_cad.py render --dxf sheet.dxf --out OUTDIR/Layout_2058_Rev00
 
@@ -29,14 +29,30 @@ from ezdxf import bbox
 from ezdxf.addons import Importer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-TEMPLATE = os.path.join(HERE, "..", "template", "MAGNARAB_A1_Full_Width_Title_Block.dxf")
-TB_BLOCK = "MAGNARAB_LAUNDRY_PROJECTS_TITLEBLOCK_A1"
+# Sheet sizes. A3 is the A1 title block scaled uniformly (same design, nothing redrawn).
+SHEETS = {
+    "A1": dict(template="MAGNARAB_A1_Full_Width_Title_Block.dxf", block="MAGNARAB_LAUNDRY_PROJECTS_TITLEBLOCK_A1",
+               w=841.0, h=594.0, area=(15.0, 70.0, 826.0, 579.0), pad=12.0, f=1.0),
+    "A3": dict(template="MAGNARAB_A3_Full_Width_Title_Block.dxf", block="MAGNARAB_LAUNDRY_PROJECTS_TITLEBLOCK_A3",
+               w=420.0, h=297.0, area=(10.0, 37.13, 410.0, 287.0), pad=6.0, f=0.6),
+}
+SHEET = "A1"
 
-SHEET_W, SHEET_H = 841.0, 594.0
-# Drawing area inside the border, above the 55 mm title block
-AREA_X0, AREA_Y0, AREA_X1, AREA_Y1 = 15.0, 70.0, 826.0, 579.0
-PAD = 12.0                       # breathing room inside the drawing area
-SCHEDULE_W = 196.0               # right-hand column for equipment schedule + notes
+
+def set_sheet(name):
+    global SHEET, TEMPLATE, TB_BLOCK, SHEET_W, SHEET_H, AREA_X0, AREA_Y0, AREA_X1, AREA_Y1, PAD, SCHEDULE_W, F
+    sh = SHEETS[name.upper()]
+    SHEET = name.upper()
+    TEMPLATE = os.path.join(HERE, "..", "template", sh["template"])
+    TB_BLOCK = sh["block"]
+    SHEET_W, SHEET_H = sh["w"], sh["h"]
+    AREA_X0, AREA_Y0, AREA_X1, AREA_Y1 = sh["area"]
+    PAD = sh["pad"]
+    F = sh["f"]                   # paper text/table size factor for this sheet
+    SCHEDULE_W = 196.0 * F
+
+
+set_sheet("A1")
 STD_SCALES = [1, 2, 5, 10, 20, 25, 50, 75, 100, 125, 150, 200, 250, 300, 400, 500, 750, 1000, 1250, 1500, 2000, 2500, 5000]
 
 FIELDS = ["PROJECT", "CLIENT", "DRAWING_TITLE", "DRAWING_NO", "REVISION", "SCALE",
@@ -100,7 +116,7 @@ def fill_title_block(doc, title, scale_n):
     vals = dict(DEFAULTS)
     vals.update({k.upper(): v for k, v in (title or {}).items() if v not in (None, "")})
     if scale_n:
-        vals["SCALE"] = f"1:{int(scale_n) if float(scale_n).is_integer() else scale_n} @ A1"
+        vals["SCALE"] = f"1:{int(scale_n) if float(scale_n).is_integer() else scale_n} @ {SHEET}"
     vals.setdefault("SCALE", "NTS")
     if vals.get("STATUS") not in STATUS_WORDS:
         print(f"note: status '{vals.get('STATUS')}' is not one of {STATUS_WORDS}", file=sys.stderr)
@@ -133,12 +149,12 @@ def setup_dimstyle(doc, n):
         ds = doc.dimstyles.new(name)
     else:
         ds = doc.dimstyles.get(name)
-    ds.dxf.dimtxt = 2.5
-    ds.dxf.dimasz = 2.0
-    ds.dxf.dimtsz = 1.5      # architectural ticks
-    ds.dxf.dimexo = 1.5
-    ds.dxf.dimexe = 1.5
-    ds.dxf.dimgap = 1.0
+    ds.dxf.dimtxt = max(2.5 * F, 1.8)
+    ds.dxf.dimasz = 2.0 * F
+    ds.dxf.dimtsz = 1.5 * F  # architectural ticks
+    ds.dxf.dimexo = 1.5 * F
+    ds.dxf.dimexe = 1.5 * F
+    ds.dxf.dimgap = 1.0 * F
     ds.dxf.dimscale = n
     ds.dxf.dimdec = 0
     ds.dxf.dimtad = 1
@@ -159,7 +175,7 @@ def rot_pts(cx, cy, w, d, rot):
 
 def build_content(doc, spec, n):
     blk = doc.blocks.new("DWG_CONTENT")
-    th = lambda paper_mm: paper_mm * n  # noqa: E731  paper text height -> model height
+    th = lambda paper_mm: max(paper_mm * F, 1.8) * n  # noqa: E731  paper text height -> model height
 
     # Walls: list of polylines (closed or open), each with a thickness in mm
     for w in spec.get("walls", []):
@@ -266,13 +282,13 @@ def model_extents(doc, block):
 # --------------------------------------------------------------------------- schedule + notes (paper space mm)
 def draw_schedule(doc, equipment, notes, x0, y_top):
     msp = doc.modelspace()
-    cols = [("TAG", 14), ("EQUIPMENT / MODEL", 84), ("SIZE W×D mm", 36), ("kg", 18), ("kW", 18), ("QTY", 12)]
+    cols = [(h, w * F) for h, w in [("TAG", 14), ("EQUIPMENT / MODEL", 84), ("SIZE W×D mm", 36), ("kg", 18), ("kW", 18), ("QTY", 12)]]
     total = sum(c[1] for c in cols)
-    rh, txt = 6.5, 2.4
+    rh, txt = 6.5 * F, max(2.4 * F, 1.6)
     L = {"layer": "SCHEDULE"}
     y = y_top
-    msp.add_text("EQUIPMENT SCHEDULE", height=3.2, dxfattribs=L).set_placement((x0, y - 4.5))
-    y -= 8
+    msp.add_text("EQUIPMENT SCHEDULE", height=3.2 * F, dxfattribs=L).set_placement((x0, y - 4.5 * F))
+    y -= 8 * F
     rows = [[c[0] for c in cols]]
     for e in equipment:
         name = e.get("name", "")
@@ -288,7 +304,7 @@ def draw_schedule(doc, equipment, notes, x0, y_top):
             max_chars = int(wdt / (txt * 0.62))
             if len(s) > max_chars:
                 s = s[: max_chars - 1] + "…"
-            msp.add_text(s, height=txt, dxfattribs=L).set_placement((x + 1.5, y - rh + 2.0))
+            msp.add_text(s, height=txt, dxfattribs=L).set_placement((x + 1.5 * F, y - rh + 2.0 * F))
             x += wdt
         y -= rh
         msp.add_line((x0, y), (x0 + total, y), dxfattribs=L)
@@ -299,14 +315,14 @@ def draw_schedule(doc, equipment, notes, x0, y_top):
         msp.add_line((x, top), (x, y), dxfattribs=L)
     msp.add_line((x0, top - rh), (x0 + total, top - rh), dxfattribs=L)
     if notes:
-        y -= 10
-        msp.add_text("NOTES", height=3.2, dxfattribs=L).set_placement((x0, y))
-        y -= 6
+        y -= 10 * F
+        msp.add_text("NOTES", height=3.2 * F, dxfattribs=L).set_placement((x0, y))
+        y -= 6 * F
         for i, n in enumerate(notes, 1):
             for line in wrap(f"{i}. {n}", int(total / (txt * 0.6))):
                 msp.add_text(line, height=txt, dxfattribs=L).set_placement((x0, y))
-                y -= 4.4
-            y -= 1.0
+                y -= txt * 1.8
+            y -= 1.0 * F
     return y
 
 
@@ -333,6 +349,9 @@ def render(dxf_path, out_base, dpi=150):
     from ezdxf.addons.drawing.config import Configuration, BackgroundPolicy, ColorPolicy, LinePolicy
 
     doc = ezdxf.readfile(dxf_path)
+    names = [i.dxf.name for i in doc.modelspace().query("INSERT")]
+    if SHEETS["A3"]["block"] in names and SHEET != "A3":
+        set_sheet("A3")
     fig = plt.figure(figsize=(SHEET_W / 25.4, SHEET_H / 25.4))
     ax = fig.add_axes([0, 0, 1, 1])
     ax.set_xlim(0, SHEET_W)
@@ -342,7 +361,7 @@ def render(dxf_path, out_base, dpi=150):
     cfg = Configuration(background_policy=BackgroundPolicy.WHITE,
                         color_policy=ColorPolicy.COLOR,
                         line_policy=LinePolicy.ACCURATE,
-                        min_lineweight=0.18)
+                        min_lineweight=0.18 if SHEET == "A1" else 0.13)
     ctx = RenderContext(doc)
     Frontend(ctx, MatplotlibBackend(ax), config=cfg).draw_layout(doc.modelspace(), finalize=False)
     ax.set_xlim(0, SHEET_W)
@@ -378,9 +397,9 @@ def cmd_new(args):
         n = new_n
     place_content_block(doc, "DWG_CONTENT", ext, n, area)
     if use_sched:
-        draw_schedule(doc, equipment, spec.get("notes", []), AREA_X1 - SCHEDULE_W + 2, AREA_Y1 - 6)
+        draw_schedule(doc, equipment, spec.get("notes", []), AREA_X1 - SCHEDULE_W + 2 * F, AREA_Y1 - 6 * F)
     elif spec.get("notes"):
-        draw_schedule(doc, [], spec["notes"], AREA_X1 - SCHEDULE_W + 2, AREA_Y1 - 6)
+        draw_schedule(doc, [], spec["notes"], AREA_X1 - SCHEDULE_W + 2 * F, AREA_Y1 - 6 * F)
     vals = fill_title_block(doc, spec.get("title"), n)
     finish(doc, args.out, vals)
 
@@ -440,7 +459,12 @@ def main():
     b = sub.add_parser("frame"); b.add_argument("--input", required=True); b.add_argument("--spec"); b.add_argument("--out", required=True)
     b.add_argument("--units", choices=["mm", "cm", "m", "in", "ft"], help="override the input DXF's units")
     c = sub.add_parser("render"); c.add_argument("--dxf", required=True); c.add_argument("--out", required=True)
+    for sp in (a, b):
+        sp.add_argument("--sheet", choices=["A1", "A3", "a1", "a3"], help="sheet size (default: spec 'sheet' or A1)")
     args = p.parse_args()
+    if args.cmd in ("new", "frame"):
+        spec_sheet = (load_spec(args.spec).get("sheet") if args.spec else None)
+        set_sheet(args.sheet or spec_sheet or "A1")
     {"new": cmd_new, "frame": cmd_frame, "render": cmd_render}[args.cmd](args)
 
 
