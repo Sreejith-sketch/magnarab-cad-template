@@ -5,7 +5,7 @@ description: MAGNARAB standard CAD sheet (A1 or A3): draw laundry layouts, frame
 
 # MAGNARAB CAD drawings (A1 / A3 standard sheet)
 
-Every MAGNARAB drawing uses one title block design: the full-width MAGNARAB "Laundry Projects" title block along the bottom of the sheet. It has a black logo panel with the green-framed MAGNARAB mark and wordmark on the left, then Project / Client / Drawing title on the top row and Drawing no., Rev., Scale, Date, Drawn by, Checked by, Approved by, Sheet and Status on the bottom row. It comes in two sizes made from the same design:
+Every MAGNARAB drawing uses one title block design: the full-width MAGNARAB "Laundry Projects" title block along the bottom of the sheet. It has a white logo panel on the left: the MAGNARAB mark in a thin green frame (charcoal marks inside), with "MAGNARAB" and "Laundry Projects" beside it in plain Arial, dark charcoal and grey, separated by a thin green line. To its right, then Project / Client / Drawing title on the top row and Drawing no., Rev., Scale, Date, Drawn by, Checked by, Approved by, Sheet and Status on the bottom row. It comes in two sizes made from the same design:
 
 | Sheet | Paper | Border | Block name | Title block size |
 |---|---|---|---|---|
@@ -14,7 +14,7 @@ Every MAGNARAB drawing uses one title block design: the full-width MAGNARAB "Lau
 
 A3 is the A1 block scaled uniformly. Both are common. Use A3 unless the brief, the scale or the drawing size calls for A1, or Sreejith says A1.
 
-The title block is fixed. Never redraw, restyle, recolour or rebuild it, and never use any other MAGNARAB title block, logo box or logo image. Older drawings and older skills used a small logo box on white with a linked `MAGNARAB-logo.png`. That design is retired: replace it wherever you find it. Only the 12 attribute values are filled. MAGNARAB is always one word, one font, one colour.
+The title block is fixed. Never redraw, restyle, recolour or rebuild it, and never use any other MAGNARAB title block, logo box or logo image. Older drawings and older skills used a small logo box on white with a linked `MAGNARAB-logo.png`. That design is retired: replace it wherever you find it. On 6 Nov 2026 Sreejith also replaced the first version of this block, which had a black logo panel and a spaced-out wordmark, with the light version above. Issued drawings keep the version they were issued with. Every new drawing or revision uses the light version: if a drawing still carries the black-panel block, redefine the block from the kit insert file (`-INSERT MAGNARAB_LAUNDRY_PROJECTS_TITLEBLOCK_A3=<kit insert file>`, insert once and delete the copy), so its attribute values are kept. The dark files are kept in `archive - dark title block (pre 6 Nov 2026)` for reference only. Only the 12 attribute values are filled. MAGNARAB is always one word, one font, one colour.
 
 Every job returns: **editable drawing** (DXF, or DWG when working in AutoCAD), **PDF** at sheet size, and **PNG preview**.
 

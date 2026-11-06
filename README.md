@@ -10,7 +10,7 @@ Used by the `magnarab-cad-drawings` Claude skill. It holds only the blank templa
 - `template/MAGNARAB_A3_Full_Width_Title_Block.dxf`: A3 sheet (420 × 297 mm, 10 mm border), the same title block scaled to 400 × 27.1 mm.
 - `template/MAGNARAB_Title_Block_A3_Insert.dxf`: the A3 title block alone (block `MAGNARAB_LAUNDRY_PROJECTS_TITLEBLOCK_A3`) for AutoCAD A3 layouts.
 - `SKILL.md`: the master Claude skill text.
-- `template/*.pdf / *.png / *.svg`: print reference and previews.
+- `template/*.pdf / *.png`: print reference and previews (light title block, 6 Nov 2026). The old dark-panel files, including the SVG preview, are in `archive - dark title block (pre 6 Nov 2026)`.
 - `scripts/magnarab_cad.py`: makes sheets (`new`, `frame`, `render`) as DXF, A1 PDF and PNG.
 
 ## Title block attributes
